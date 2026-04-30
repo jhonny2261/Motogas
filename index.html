@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0a0a0f">
+<title>MotoGas</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg:#0a0a0f;--bg2:#12121a;--bg3:#1a1a26;
+  --accent:#f5a623;--accent2:#ff6b35;--green:#39d98a;
+  --red:#ff4757;--blue:#4ecdc4;--purple:#a855f7;
+  --text:#e8e8f0;--muted:#6b6b88;--border:rgba(245,166,35,0.15);
+  --card:rgba(255,255,255,0.03);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-height:100vh;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:radial-gradient(ellipse 80% 50% at 50% -20%,rgba(245,166,35,0.07) 0%,transparent 60%),
+             radial-gradient(ellipse 40% 30% at 80% 80%,rgba(255,107,53,0.04) 0%,transparent 50%)}
+.app{position:relative;z-index:1;max-width:480px;margin:0 auto;padding:0 0 90px}
+
+.header{padding:20px 20px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:rgba(10,10,15,0.97);backdrop-filter:blur(20px);z-index:100}
+.logo{font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:3px;color:var(--accent)}
+.logo-sub{font-size:9px;color:var(--muted);font-family:'Space Mono',monospace;letter-spacing:2px}
+.status-badge{font-size:9px;font-family:'Space Mono',monospace;color:var(--muted);display:flex;align-items:center;gap:5px}
+.dot{width:8px;height:8px;border-radius:50%}
+.dot.on{background:var(--green);box-shadow:0 0 8px var(--green)}
+.dot.off{background:var(--red)}
+
+.nav{position:fixed;bottom:0;left:0;right:0;background:rgba(10,10,15,0.98);backdrop-filter:blur(20px);border-top:1px solid var(--border);display:flex;z-index:200;max-width:480px;margin:0 auto}
+.nav-btn{flex:1;padding:12px 4px 16px;background:none;border:none;color:var(--muted);font-family:'Space Mono',monospace;font-size:8px;letter-spacing:1px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:5px;transition:color 0.2s;text-transform:uppercase}
+.nav-btn.active{color:var(--accent)}
+.nav-btn svg{width:20px;height:20px}
+
+.view{display:none;padding:18px}
+.view.active{display:block}
+.section-title{font-family:'Bebas Neue',sans-serif;font-size:32px;letter-spacing:3px;margin-bottom:2px;line-height:1}
+.section-sub{font-size:10px;color:var(--muted);font-family:'Space Mono',monospace;letter-spacing:1px;margin-bottom:20px}
+
+.card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:18px;margin-bottom:12px;position:relative;overflow:hidden}
+.card-title{font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:2px;color:var(--accent);margin-bottom:14px}
+
+label{display:block;font-size:9px;letter-spacing:2px;color:var(--muted);font-family:'Space Mono',monospace;text-transform:uppercase;margin-bottom:6px}
+input,select{width:100%;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px;color:var(--text);font-family:'Space Mono',monospace;font-size:14px;padding:12px 13px;outline:none;transition:border-color 0.2s;-webkit-appearance:none;appearance:none;margin-bottom:14px}
+input:focus,select:focus{border-color:var(--accent)}
+select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23f5a623' d='M6 8L1 3h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:40px}
+.row-2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+.btn{width:100%;padding:15px;border-radius:12px;border:none;font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:3px;cursor:pointer;transition:transform 0.15s}
+.btn:active{transform:scale(0.97)}
+.btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#0a0a0f}
+
+.stats-strip{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:18px}
+.stat-box{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 8px;text-align:center}
+.stat-val{font-family:'Bebas Neue',sans-serif;font-size:24px;color:var(--accent);letter-spacing:1px;line-height:1}
+.stat-lbl{font-size:8px;color:var(--muted);font-family:'Space Mono',monospace;letter-spacing:1px;margin-top:3px;text-transform:uppercase}
+
+.rank-item{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px 16px;margin-bottom:10px;display:flex;align-items:center;gap:12px;animation:slideIn 0.3s ease}
+@keyframes slideIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.rank-pos{font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--muted);width:28px;text-align:center;flex-shrink:0}
+.rank-pos.gold{color:#ffd700}.rank-pos.silver{color:#c0c0c0}.rank-pos.bronze{color:#cd7f32}
+.rank-avatar{width:42px;height:42px;border-radius:10px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.rank-info{flex:1;min-width:0}
+.rank-name{font-weight:800;font-size:14px}
+.rank-moto{font-size:10px;color:var(--muted);font-family:'Space Mono',monospace;margin-top:2px}
+.rank-val{text-align:right;flex-shrink:0}
+.rank-num{font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--accent)}
+.rank-unit{font-size:9px;color:var(--muted);font-family:'Space Mono',monospace}
+.progress-bg{height:4px;background:rgba(255,255,255,0.06);border-radius:999px;overflow:hidden;margin-top:6px}
+.progress-fill{height:100%;border-radius:999px;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width 0.6s ease}
+
+.entry-item{background:var(--card);border:1px solid var(--border);border-radius:13px;padding:14px;margin-bottom:9px;display:flex;align-items:center;gap:12px;animation:slideIn 0.3s ease}
+.entry-icon{width:40px;height:40px;border-radius:9px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.entry-info{flex:1;min-width:0}
+.entry-top{display:flex;justify-content:space-between;align-items:center}
+.entry-name{font-weight:800;font-size:13px}
+.entry-litros{font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--accent)}
+.entry-meta{font-size:9px;color:var(--muted);font-family:'Space Mono',monospace;margin-top:2px}
+.rend-badge{font-family:'Space Mono',monospace;font-size:10px;color:var(--green);background:rgba(57,217,138,0.08);border:1px solid rgba(57,217,138,0.2);border-radius:6px;padding:2px 6px;margin-top:4px;display:inline-block}
+.del-btn{background:none;border:none;color:var(--muted);cursor:pointer;padding:5px;border-radius:7px;transition:color 0.2s,background 0.2s;flex-shrink:0}
+.del-btn:hover{color:var(--red);background:rgba(255,71,87,0.1)}
+
+.rider-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:15px;margin-bottom:10px;display:flex;align-items:center;gap:12px}
+.rider-avatar{width:46px;height:46px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:22px;background:var(--bg3);border:1px solid var(--border);flex-shrink:0}
+.rider-info{flex:1}
+.rider-name{font-weight:800;font-size:14px}
+.rider-meta{font-size:9px;color:var(--muted);font-family:'Space Mono',monospace;margin-top:2px}
+.rider-stats{display:flex;gap:14px;margin-top:8px}
+.rider-stat-val{font-family:'Bebas Neue',sans-serif;font-size:17px;color:var(--accent)}
+.rider-stat-lbl{font-size:8px;color:var(--muted);font-family:'Space Mono',monospace}
+
+.moto-pills{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:14px}
+.pill{padding:7px 14px;border-radius:999px;border:1px solid var(--border);font-size:11px;font-family:'Space Mono',monospace;cursor:pointer;background:none;color:var(--muted);transition:all 0.2s}
+.pill.active{background:var(--accent);color:#0a0a0f;border-color:var(--accent);font-weight:700}
+.pill-all.active{background:var(--bg3);color:var(--text);border-color:rgba(255,255,255,0.2)}
+
+.chart-wrap{position:relative;height:200px;margin-top:10px}
+.empty{text-align:center;padding:40px 20px;color:var(--muted)}
+.empty-icon{font-size:40px;margin-bottom:10px}
+.empty p{font-family:'Space Mono',monospace;font-size:11px;line-height:1.7}
+
+.toast{position:fixed;bottom:95px;left:50%;transform:translateX(-50%);font-family:'Space Mono',monospace;font-size:11px;font-weight:700;padding:11px 22px;border-radius:999px;opacity:0;pointer-events:none;transition:opacity 0.3s;z-index:999;white-space:nowrap}
+.toast.success{background:var(--green);color:#0a0a0f}
+.toast.error{background:var(--red);color:#fff}
+.toast.show{opacity:1}
+
+.loading{display:flex;align-items:center;justify-content:center;gap:8px;padding:30px;color:var(--muted);font-family:'Space Mono',monospace;font-size:11px}
+.spinner{width:18px;height:18px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <div>
+      <div class="logo">MotoGas ⛽</div>
+      <div class="logo-sub">GRUPO DE MOTOS</div>
+    </div>
+    <div class="status-badge">
+      <span class="dot off" id="statusDot"></span>
+      <span id="statusText">Conectando...</span>
+    </div>
+  </div>
+
+  <div class="view active" id="view-dash">
+    <div class="section-title">DASHBOARD</div>
+    <div class="section-sub">// ESTADÍSTICAS DEL GRUPO</div>
+    <div id="dashContent"><div class="loading"><div class="spinner"></div>Cargando datos...</div></div>
+  </div>
+
+  <div class="view" id="view-registrar">
+    <div class="section-title">CARGAR</div>
+    <div class="section-sub">// NUEVO REGISTRO</div>
+    <div class="card">
+      <label>Piloto</label>
+      <select id="fPiloto"><option value="">— Selecciona piloto —</option></select>
+      <label>Gasolinera</label>
+      <input type="text" id="fGasolinera" placeholder="Ej: Delta Vía España" list="gas-list">
+      <datalist id="gas-list"></datalist>
+      <div class="row-2">
+        <div><label>Kilómetros actuales</label><input type="number" id="fKm" placeholder="42500" inputmode="numeric"></div>
+        <div><label>Litros cargados</label><input type="number" id="fLitros" placeholder="8.5" inputmode="decimal" step="0.1"></div>
+      </div>
+      <div class="row-2">
+        <div><label>Precio por litro ($)</label><input type="number" id="fPrecio" placeholder="0.92" inputmode="decimal" step="0.01"></div>
+        <div><label>Fecha</label><input type="date" id="fFecha"></div>
+      </div>
+      <button class="btn btn-primary" onclick="registrarCarga()">⛽ REGISTRAR CARGA</button>
+    </div>
+  </div>
+
+  <div class="view" id="view-historial">
+    <div class="section-title">HISTORIAL</div>
+    <div class="section-sub">// TODOS LOS REGISTROS</div>
+    <div class="stats-strip">
+      <div class="stat-box"><div class="stat-val" id="hC">—</div><div class="stat-lbl">Cargas</div></div>
+      <div class="stat-box"><div class="stat-val" id="hL">—</div><div class="stat-lbl">Litros</div></div>
+      <div class="stat-box"><div class="stat-val" id="hR">—</div><div class="stat-lbl">km/L prom</div></div>
+    </div>
+    <div class="moto-pills" id="filterPills"></div>
+    <div id="historialList"><div class="loading"><div class="spinner"></div>Cargando...</div></div>
+  </div>
+
+  <div class="view" id="view-pilotos">
+    <div class="section-title">PILOTOS</div>
+    <div class="section-sub">// MIEMBROS DEL GRUPO</div>
+    <div class="card">
+      <div class="card-title">AGREGAR PILOTO</div>
+      <label>Nombre</label><input type="text" id="nNombre" placeholder="Ej: Jhony">
+      <label>Moto</label><input type="text" id="nMoto" placeholder="Ej: Honda CB500F">
+      <label>Emoji</label><input type="text" id="nEmoji" placeholder="🏍️" maxlength="2">
+      <button class="btn btn-primary" onclick="agregarPiloto()">+ AGREGAR PILOTO</button>
+    </div>
+    <div id="pilotosList"><div class="loading"><div class="spinner"></div>Cargando...</div></div>
+  </div>
+</div>
+
+<nav class="nav">
+  <button class="nav-btn active" onclick="showView('dash',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>DASH
+  </button>
+  <button class="nav-btn" onclick="showView('registrar',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>CARGAR
+  </button>
+  <button class="nav-btn" onclick="showView('historial',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h18v18H3z"/><path d="M3 9h18M9 21V9"/></svg>HISTORIAL
+  </button>
+  <button class="nav-btn" onclick="showView('pilotos',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>PILOTOS
+  </button>
+</nav>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SUPA_URL = 'https://slhbpeijcjdurgfjwzaz.supabase.co';
+const SUPA_KEY = 'sb_publishable_OPaRE9HovH6s_Wr6kZT7kA_1EG4ApVW';
+const H = {'Content-Type':'application/json','apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Prefer':'return=representation'};
+
+async function dbGet(t,q=''){const r=await fetch(`${SUPA_URL}/rest/v1/${t}?${q}`,{headers:H});if(!r.ok)throw new Error(await r.text());return r.json()}
+async function dbPost(t,d){const r=await fetch(`${SUPA_URL}/rest/v1/${t}`,{method:'POST',headers:H,body:JSON.stringify(d)});if(!r.ok)throw new Error(await r.text());return r.json()}
+async function dbDel(t,id){const r=await fetch(`${SUPA_URL}/rest/v1/${t}?id=eq.${id}`,{method:'DELETE',headers:H});if(!r.ok)throw new Error(await r.text())}
+
+let pilotos=[],cargas=[],filtroActivo='todos',chartInst=null;
+
+async function init(){
+  document.getElementById('fFecha').value=new Date().toISOString().split('T')[0];
+  try{
+    [pilotos,cargas]=await Promise.all([dbGet('pilotos','order=created_at.asc'),dbGet('cargas','order=fecha.desc,km.desc')]);
+    setOnline(true);renderSelectPiloto();updateGasList();renderDash();
+  }catch(e){setOnline(false);showToast('Sin conexión a Supabase','error')}
+}
+
+function setOnline(on){
+  document.getElementById('statusDot').className='dot '+(on?'on':'off');
+  document.getElementById('statusText').textContent=on?'EN LÍNEA':'SIN CONEXIÓN';
+}
+
+function showView(n,btn){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('view-'+n).classList.add('active');btn.classList.add('active');
+  if(n==='dash')renderDash();
+  if(n==='historial')renderHistorial();
+  if(n==='pilotos')renderPilotos();
+}
+
+function showToast(msg,type='success'){
+  const t=document.getElementById('toast');t.textContent=msg;t.className='toast '+type+' show';
+  setTimeout(()=>t.classList.remove('show'),2800);
+}
+
+function getPiloto(id){return pilotos.find(p=>p.id===id)||{emoji:'🏍️',nombre:'—'}}
+function fmtF(d){if(!d)return '';return new Date(d+'T12:00:00').toLocaleDateString('es-PA',{day:'2-digit',month:'short'})}
+
+// PILOTOS
+async function agregarPiloto(){
+  const nombre=document.getElementById('nNombre').value.trim();
+  const moto=document.getElementById('nMoto').value.trim();
+  const emoji=document.getElementById('nEmoji').value.trim()||'🏍️';
+  if(!nombre){showToast('Ingresa un nombre','error');return}
+  try{
+    const res=await dbPost('pilotos',{nombre,moto,emoji});
+    pilotos.push(res[0]);
+    document.getElementById('nNombre').value='';document.getElementById('nMoto').value='';document.getElementById('nEmoji').value='';
+    renderPilotos();renderSelectPiloto();showToast('✅ Piloto agregado!');
+  }catch(e){showToast('Error al guardar','error')}
+}
+
+async function eliminarPiloto(id){
+  if(!confirm('¿Eliminar este piloto y todas sus cargas?'))return;
+  try{
+    await dbDel('pilotos',id);
+    pilotos=pilotos.filter(p=>p.id!==id);cargas=cargas.filter(c=>c.piloto_id!==id);
+    renderPilotos();renderSelectPiloto();showToast('Piloto eliminado');
+  }catch(e){showToast('Error al eliminar','error')}
+}
+
+function renderPilotos(){
+  const el=document.getElementById('pilotosList');
+  if(!pilotos.length){el.innerHTML='<div class="empty"><div class="empty-icon">👥</div><p>Agrega pilotos arriba.</p></div>';return}
+  el.innerHTML=pilotos.map(p=>{
+    const pc=cargas.filter(c=>c.piloto_id===p.id);
+    const lit=pc.reduce((s,c)=>s+parseFloat(c.litros),0);
+    const pr=pc.filter(c=>c.rendimiento).map(c=>parseFloat(c.rendimiento));
+    const rp=pr.length?(pr.reduce((a,b)=>a+b,0)/pr.length).toFixed(1):'—';
+    const g=pc.reduce((s,c)=>s+(parseFloat(c.litros)*parseFloat(c.precio||0)),0);
+    return`<div class="rider-card">
+      <div class="rider-avatar">${p.emoji}</div>
+      <div class="rider-info">
+        <div class="rider-name">${p.nombre}</div>
+        <div class="rider-meta">${p.moto||'Sin moto registrada'}</div>
+        <div class="rider-stats">
+          <div><div class="rider-stat-val">${pc.length}</div><div class="rider-stat-lbl">Cargas</div></div>
+          <div><div class="rider-stat-val">${lit.toFixed(1)}L</div><div class="rider-stat-lbl">Litros</div></div>
+          <div><div class="rider-stat-val">${rp}</div><div class="rider-stat-lbl">km/L</div></div>
+          <div><div class="rider-stat-val">$${g.toFixed(0)}</div><div class="rider-stat-lbl">Gasto</div></div>
+        </div>
+      </div>
+      <button class="del-btn" onclick="eliminarPiloto('${p.id}')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg>
+      </button>
+    </div>`;
+  }).join('');
+}
+
+function renderSelectPiloto(){
+  document.getElementById('fPiloto').innerHTML='<option value="">— Selecciona piloto —</option>'+
+    pilotos.map(p=>`<option value="${p.id}">${p.emoji} ${p.nombre}${p.moto?' — '+p.moto:''}</option>`).join('');
+}
+
+// CARGAS
+async function registrarCarga(){
+  const piloto_id=document.getElementById('fPiloto').value;
+  const gasolinera=document.getElementById('fGasolinera').value.trim();
+  const km=parseFloat(document.getElementById('fKm').value);
+  const litros=parseFloat(document.getElementById('fLitros').value);
+  const precio=parseFloat(document.getElementById('fPrecio').value)||0;
+  const fecha=document.getElementById('fFecha').value||new Date().toISOString().split('T')[0];
+  if(!piloto_id){showToast('Selecciona un piloto','error');return}
+  if(!gasolinera){showToast('Ingresa la gasolinera','error');return}
+  if(!km||km<=0){showToast('Ingresa los kilómetros','error');return}
+  if(!litros||litros<=0){showToast('Ingresa los litros','error');return}
+  const ant=cargas.filter(c=>c.piloto_id===piloto_id&&parseFloat(c.km)<km).sort((a,b)=>parseFloat(b.km)-parseFloat(a.km));
+  let rendimiento=null;
+  if(ant.length>0){const kr=km-parseFloat(ant[0].km);if(kr>0)rendimiento=parseFloat((kr/litros).toFixed(2))}
+  try{
+    const res=await dbPost('cargas',{piloto_id,gasolinera,km,litros,precio,fecha,rendimiento});
+    cargas.unshift(res[0]);updateGasList();
+    document.getElementById('fGasolinera').value='';document.getElementById('fKm').value='';
+    document.getElementById('fLitros').value='';document.getElementById('fPrecio').value='';
+    showToast(rendimiento?`✅ Registrado! ${rendimiento} km/L`:'✅ Carga registrada!');
+  }catch(e){showToast('Error al guardar','error')}
+}
+
+async function eliminarCarga(id){
+  try{await dbDel('cargas',id);cargas=cargas.filter(c=>c.id!==id);renderHistorial();showToast('Registro eliminado')}
+  catch(e){showToast('Error al eliminar','error')}
+}
+
+function updateGasList(){
+  document.getElementById('gas-list').innerHTML=[...new Set(cargas.map(c=>c.gasolinera))].map(g=>`<option value="${g}">`).join('');
+}
+
+// HISTORIAL
+function filtrar(pid,btn){
+  filtroActivo=pid;
+  document.querySelectorAll('.moto-pills .pill').forEach(p=>p.classList.remove('active'));
+  btn.classList.add('active');renderHistorial();
+}
+
+function renderHistorial(){
+  document.getElementById('filterPills').innerHTML=
+    `<button class="pill pill-all ${filtroActivo==='todos'?'active':''}" onclick="filtrar('todos',this)">Todos</button>`+
+    pilotos.map(p=>`<button class="pill ${filtroActivo===p.id?'active':''}" onclick="filtrar('${p.id}',this)">${p.emoji} ${p.nombre}</button>`).join('');
+  const lista=filtroActivo==='todos'?cargas:cargas.filter(c=>c.piloto_id===filtroActivo);
+  const tL=lista.reduce((s,c)=>s+parseFloat(c.litros),0);
+  const rs=lista.filter(c=>c.rendimiento).map(c=>parseFloat(c.rendimiento));
+  const rp=rs.length?(rs.reduce((a,b)=>a+b,0)/rs.length).toFixed(1):'—';
+  document.getElementById('hC').textContent=lista.length;
+  document.getElementById('hL').textContent=tL.toFixed(1)+'L';
+  document.getElementById('hR').textContent=rp;
+  const el=document.getElementById('historialList');
+  if(!lista.length){el.innerHTML='<div class="empty"><div class="empty-icon">⛽</div><p>No hay registros aún.</p></div>';return}
+  el.innerHTML=lista.map(c=>{
+    const p=getPiloto(c.piloto_id);
+    const tot=(parseFloat(c.litros)*parseFloat(c.precio||0)).toFixed(2);
+    return`<div class="entry-item">
+      <div class="entry-icon">${p.emoji}</div>
+      <div class="entry-info">
+        <div class="entry-top"><span class="entry-name">${p.nombre}</span><span class="entry-litros">${parseFloat(c.litros).toFixed(1)}L</span></div>
+        <div class="entry-meta">${c.gasolinera} · ${parseInt(c.km).toLocaleString()} km · ${fmtF(c.fecha)}${c.precio>0?' · $'+tot:''}</div>
+        ${c.rendimiento?`<span class="rend-badge">⚡ ${parseFloat(c.rendimiento).toFixed(1)} km/L</span>`:''}
+      </div>
+      <button class="del-btn" onclick="eliminarCarga('${c.id}')">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg>
+      </button>
+    </div>`;
+  }).join('');
+}
+
+// DASHBOARD
+function renderDash(){
+  const el=document.getElementById('dashContent');
+  if(!pilotos.length){el.innerHTML='<div class="empty"><div class="empty-icon">🏍️</div><p>Agrega pilotos primero<br>en la sección Pilotos.</p></div>';return}
+  const tC=cargas.length;
+  const tL=cargas.reduce((s,c)=>s+parseFloat(c.litros),0);
+  const tG=cargas.reduce((s,c)=>s+(parseFloat(c.litros)*parseFloat(c.precio||0)),0);
+  const rs=cargas.filter(c=>c.rendimiento).map(c=>parseFloat(c.rendimiento));
+  const rG=rs.length?(rs.reduce((a,b)=>a+b,0)/rs.length).toFixed(1):'—';
+
+  const pStats=pilotos.map(p=>{
+    const pc=cargas.filter(c=>c.piloto_id===p.id);
+    const lit=pc.reduce((s,c)=>s+parseFloat(c.litros),0);
+    const gas=pc.reduce((s,c)=>s+(parseFloat(c.litros)*parseFloat(c.precio||0)),0);
+    const pr=pc.filter(c=>c.rendimiento).map(c=>parseFloat(c.rendimiento));
+    const rp=pr.length?pr.reduce((a,b)=>a+b,0)/pr.length:0;
+    return{...p,nc:pc.length,lit,gas,rp};
+  });
+
+  const mL=Math.max(...pStats.map(p=>p.lit),1);
+  const mG=Math.max(...pStats.map(p=>p.gas),1);
+  const mR=Math.max(...pStats.map(p=>p.rp),1);
+  const rankL=[...pStats].sort((a,b)=>b.lit-a.lit);
+  const rankR=[...pStats].filter(p=>p.rp>0).sort((a,b)=>b.rp-a.rp);
+  const rankG=[...pStats].filter(p=>p.gas>0).sort((a,b)=>b.gas-a.gas);
+  const medals=['gold','silver','bronze'];
+
+  function rc(p,i,val,unit,max){
+    const pct=max>0?val/max*100:0;
+    return`<div class="rank-item">
+      <div class="rank-pos ${medals[i]||''}">${i+1}</div>
+      <div class="rank-avatar">${p.emoji}</div>
+      <div class="rank-info">
+        <div class="rank-name">${p.nombre}</div>
+        <div class="rank-moto">${p.moto||''}</div>
+        <div class="progress-bg"><div class="progress-fill" style="width:${pct}%"></div></div>
+      </div>
+      <div class="rank-val"><div class="rank-num">${val}</div><div class="rank-unit">${unit}</div></div>
+    </div>`;
+  }
+
+  const gasC={};cargas.forEach(c=>{gasC[c.gasolinera]=(gasC[c.gasolinera]||0)+1});
+  const topG=Object.entries(gasC).sort((a,b)=>b[1]-a[1]).slice(0,3);
+
+  el.innerHTML=`
+  <div class="stats-strip">
+    <div class="stat-box"><div class="stat-val">${tC}</div><div class="stat-lbl">Cargas</div></div>
+    <div class="stat-box"><div class="stat-val">${tL.toFixed(0)}L</div><div class="stat-lbl">Litros</div></div>
+    <div class="stat-box"><div class="stat-val">$${tG.toFixed(0)}</div><div class="stat-lbl">Gasto total</div></div>
+  </div>
+  <div class="stats-strip">
+    <div class="stat-box"><div class="stat-val">${pilotos.length}</div><div class="stat-lbl">Pilotos</div></div>
+    <div class="stat-box"><div class="stat-val">${rG}</div><div class="stat-lbl">km/L grupo</div></div>
+    <div class="stat-box"><div class="stat-val">${(tL/Math.max(pilotos.length,1)).toFixed(1)}L</div><div class="stat-lbl">Prom/moto</div></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">🏆 MÁS COMBUSTIBLE</div>
+    ${rankL.map((p,i)=>rc(p,i,p.lit.toFixed(1)+'L','litros',mL)).join('')}
+  </div>
+
+  ${rankR.length?`<div class="card">
+    <div class="card-title">⚡ MEJOR RENDIMIENTO</div>
+    ${rankR.map((p,i)=>rc(p,i,p.rp.toFixed(1),'km/L',mR)).join('')}
+  </div>`:''}
+
+  ${rankG.length?`<div class="card">
+    <div class="card-title">💰 MAYOR GASTO EN COMBUSTIBLE</div>
+    ${rankG.map((p,i)=>rc(p,i,'$'+p.gas.toFixed(2),'dólares',mG)).join('')}
+  </div>`:''}
+
+  ${topG.length?`<div class="card">
+    <div class="card-title">⛽ GASOLINERAS FAVORITAS</div>
+    ${topG.map(([g,n],i)=>`
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;${i<topG.length-1?'border-bottom:1px solid var(--border)':''}">
+      <div><div style="font-weight:700;font-size:13px">${g}</div><div style="font-size:9px;color:var(--muted);font-family:'Space Mono',monospace">${n} visita${n>1?'s':''}</div></div>
+      <div style="font-size:24px">${['🥇','🥈','🥉'][i]}</div>
+    </div>`).join('')}
+  </div>`:''}
+
+  ${pilotos.length>1?`<div class="card">
+    <div class="card-title">📊 LITROS POR PILOTO</div>
+    <div class="chart-wrap"><canvas id="chartLitros"></canvas></div>
+  </div>`:''}`;
+
+  if(pilotos.length>1){
+    setTimeout(()=>{
+      const ctx=document.getElementById('chartLitros');if(!ctx)return;
+      if(chartInst){chartInst.destroy();chartInst=null}
+      chartInst=new Chart(ctx,{
+        type:'bar',
+        data:{
+          labels:pStats.map(p=>p.nombre),
+          datasets:[{label:'Litros',data:pStats.map(p=>parseFloat(p.lit.toFixed(1))),
+            backgroundColor:['rgba(245,166,35,0.75)','rgba(255,107,53,0.75)','rgba(78,205,196,0.75)','rgba(168,85,247,0.75)','rgba(57,217,138,0.75)'],
+            borderRadius:8,borderWidth:0}]
+        },
+        options:{responsive:true,maintainAspectRatio:false,
+          plugins:{legend:{display:false}},
+          scales:{
+            x:{ticks:{color:'#6b6b88',font:{family:'Space Mono',size:10}},grid:{color:'rgba(255,255,255,0.04)'}},
+            y:{ticks:{color:'#6b6b88',font:{family:'Space Mono',size:10}},grid:{color:'rgba(255,255,255,0.04)'}}
+          }
+        }
+      });
+    },100);
+  }
+}
+
+init();
+</script>
+</body>
+</html>
